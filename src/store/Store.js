@@ -5,7 +5,9 @@ Vue.use(vuex)
  const state={
     isGoodsComplete:false,
      isBannerComplete:false,
-     isRecommendsComplete:false
+     isRecommendsComplete:false,
+     host:"http://localhost",
+     isGoodsDetail:false
 
 }
 const mutations={
@@ -17,6 +19,9 @@ const mutations={
     },
     changeRecommendsToComplete(state){
         state.isRecommendsComplete=true
+    },
+    changeisGoodsDetailComplete(state){
+        state.isGoodsDetail = true
     }
 }
 

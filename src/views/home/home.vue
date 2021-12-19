@@ -12,21 +12,28 @@
     <nav-bar class="home-nav">
       <template v-slot:center>购物街</template>
     </nav-bar>
+    <tab-control :titles="titles"
+                 ref="tabControl1"
+                 @tabClick="tabClick"
+                 class="tabControl"
+                 v-show="isTabFixed"
+    ></tab-control>
     <scroll class="wrapper"
             ref="scroll"
             @showScroll="showScroll"
             @pullUpLoad="pullUpLoad">
       <div class="content">
         <!--    轮播图-->
-        <swiper :bannerImg="banners" :port="url"></swiper>
+        <swiper :bannerImg="banners" :port="url" @swiperImgLoad="swiperImgLoad"></swiper>
         <!--    推荐信息-->
         <recommend :recommends="recommends" :port="url"></recommend>
         <!--    -->
         <future-view></future-view>
         <!--    -->
         <tab-control :titles="titles"
-                     ref="tabControl"
+                     ref="tabControl2"
                      @tabClick="tabClick"
+
         ></tab-control>
         <goods-list :goodsList="showGoodsList" :port="url"></goods-list>
       </div>
@@ -59,7 +66,7 @@ export default {
       banners: null,
       recommends: null,
       titles: ['流行', '精选', '新款'],
-      url: "http://dabenfeng.top",//后端的主机端口
+      url: this.$store.state.host,//后端的主机端口
       goods: {
         'pop': {page: 1, list: []},
         'new': {page: 1, list: []},
@@ -67,7 +74,11 @@ export default {
       },
       currentType: "pop",
       scroll: null,
-      backTopIsShow:false
+      backTopIsShow: false,
+      tabOffSet: 0,
+      isTabFixed: false,
+      scrollY:0,
+      isNetWorkComplete:false
     }
   },
   components: {
@@ -94,43 +105,52 @@ export default {
   mounted() {
     //监听图片加载，刷新scroll高度
     //this.debounce(this.$refs.scroll.refresh,200)()
-    const refresh = debounce(this.$refs.scroll.refresh,50)
-   this.$bus.$on("itemImgLoad",()=>{
-     refresh()
+    const refresh = debounce(this.$refs.scroll.refresh, 50)
+    this.$bus.$on("itemImgLoad", () => {
+      refresh()
     })
-    console.log(this.$refs.tabControl.$el.offsetTop)
   },
   computed: {
     showGoodsList() {
       return this.goods[this.currentType].list
     }
-
   },
   methods: {
-
+    initScroll() {
+      //判断vuex中state全部为true
+      if (this.$store.state.isGoodsComplete && this.$store.state.isBannerComplete && this.$store.state.isRecommendsComplete) {
+        //短路运算，如果没有实例，就会实例化，如果实例化，就直接短路
+        !this.$refs.scroll.scroll && this.$refs.scroll._initScroll()
+      }
+    },
+    //请求轮播图信息
     saveHomeBanner() {
       //请求并保存
-      getHomeBanner().then(res =>{
+      getHomeBanner().then(res => {
         this.banners = res.data
-        this.$store.commit("changeBannersToComplete")
-      } )
+        !this.$store.state.isBannerComplete && this.$store.commit("changeBannersToComplete")
+        this.initScroll()
+      })
     },
+    //请求推荐信息
     saveHomeRecommends() {
       //请求推荐信息数据
       getHomeRecommends().then(res => {
         this.recommends = res.data
-        this.$store.commit("changeRecommendsToComplete")
+        !this.$store.state.isRecommendsComplete && this.$store.commit("changeRecommendsToComplete")
+        this.initScroll()
       })
     },
     //请求商品信息
     saveHomeGoods(type) {
       const page = this.goods[type].page;
       getHomeGoods(type, page).then(res => {
-        if(res.data) {
+        if (res.data) {
           this.goods[type].list.push(...res.data)
         }
-        this.$store.commit("changeGoodsToComplete")
-        console.log(this.$store.state.isComplete);
+        !this.$store.state.isGoodsComplete && this.$store.commit("changeGoodsToComplete")
+        this.initScroll()
+        this.isNetWorkComplete=true
         this.goods[type].page++
         this.$refs.scroll.finishPullUp()
         this.$nextTick(() => {
@@ -150,6 +170,7 @@ export default {
       })
 
     },
+    //切换分类
     tabClick(index) {
       switch (index) {
         case 0:
@@ -162,19 +183,38 @@ export default {
           this.currentType = "new";
           break
       }
+      this.$refs.tabControl1.currentIndex=index
+      this.$refs.tabControl2.currentIndex=index
     },
     //返回顶部
     backClick() {
       console.log(this.$refs.scroll);
-      this.$refs.scroll.scroll.scrollTo(0,0,500)
+      this.$refs.scroll.scroll.scrollTo(0, 0, 500)
     },
-    //子组件自定义事件，判断显示返回顶部按钮
-    showScroll(position){
-      this.backTopIsShow = (-position.y)>500
+    //子组件自定义事件，判断滚动位置
+    showScroll(position) {
+      //判断显示返回顶部按钮
+      this.backTopIsShow = (-position.y) > 500
+      //判断吸顶效果
+      this.isTabFixed = (-position.y)>this.tabOffSet
+
     },
-    pullUpLoad(){
+    pullUpLoad() {
       this.saveHomeGoods(this.currentType)
+    },
+    swiperImgLoad() {
+      //console.log(this.$refs.tabControl.$el.offsetTop)
+      this.tabOffSet = this.$refs.tabControl2.$el.offsetTop
     }
+  },
+  activated() {
+    this.$refs.scroll.scroll&&this.$refs.scroll.scroll.scrollTo(0,this.scrollY,0)
+    this.$refs.scroll.scroll&&this.$refs.scroll.scroll.refresh()
+    console.log(this.scrollY);
+  },
+  deactivated() {
+    this.scrollY=this.$refs.scroll.getScrollY()
+    console.log(this.scrollY);
   }
 }
 </script>
@@ -183,27 +223,36 @@ export default {
 #home {
   /*padding-top: 44px;*/
   height: 100vh;
+  position: relative;
 }
 
 .home-nav {
   background-color: var(--color-tint);
   color: #f6f6f6;
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: 0;
+  /*position: fixed;*/
+  /*left: 0;*/
+  /*right: 0;*/
+  /*top: 0;*/
   z-index: 100;
 }
 
-.tab-control {
-  position: sticky;
-  top: 44px;
+/*.tab-control {*/
+/*  position: sticky;*/
+/*  top: 44px;*/
 
-}
+/*}*/
+
 
 .wrapper {
-  height: calc(100% - 93px);
 
-  margin-top: 44px;
+  height: calc(100% - 93px);
+  position: absolute;
+  overflow: hidden;
+  top: 44px;
+  /*margin-top: 44px;*/
+}
+.tabControl{
+  position: relative;
+  z-index: 100;
 }
 </style>

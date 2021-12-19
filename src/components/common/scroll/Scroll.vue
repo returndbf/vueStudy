@@ -22,11 +22,15 @@ export default {
 
 
   },
-  mounted() {
-
-    // setTimeout(this._initScroll, 1000)
+  updated() {
+    // eslint-disable-next-line no-debugger
+     //debugger;
+     //setTimeout(this._initScroll, 3000)
     if(this.$store.state.isGoodsComplete&&this.$store.state.isBannerComplete&&this.$store.state.isRecommendsComplete){
-      this._initScroll
+      //this._initScroll
+      if(!scroll){
+        //this._initScroll
+      }
     }
 
   },
@@ -63,7 +67,9 @@ export default {
     refresh() {
       console.log("img");
       this.scroll && this.scroll.refresh()
-
+    },
+    getScrollY(){
+      return this.scroll?this.scroll.y:0
     }
 
   }

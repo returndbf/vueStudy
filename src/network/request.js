@@ -1,7 +1,7 @@
 import axios from "axios";
 export function request(config){
     const instance = axios.create({
-        baseURL:"https://dabenfeng.top",
+        baseURL:"http://localhost",
         timeout:5000
     })
     //请求拦截，config是传入的配置

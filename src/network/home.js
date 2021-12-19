@@ -15,7 +15,7 @@ export function  getHomeGoods(type,page){
     return request({
         url:"/getGoodsByType",
         params:{
-            // eslint-disable-next-line no-undef
+
             type,page
         }
     })
