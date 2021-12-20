@@ -9,7 +9,9 @@
       <goods-info :goods="goods"></goods-info>
 
       <shop-info :shopInfo="shopInfo"></shop-info>
+      <detail-comment :comment="detailComment"></detail-comment>
       <detail-info :detailImg="detailInfo" @detailImgLoad="detailImgLoad"></detail-info>
+      <detail-recommend></detail-recommend>
     </scroll>
   </div>
 </template>
@@ -25,10 +27,12 @@ import ShopInfo from "@/views/detail/childComponents/ShopInfo";
 
 import Scroll from "@/components/common/scroll/Scroll";
 import DetailInfo from "@/views/detail/childComponents/DetailInfo";
+import DetailComment from "@/views/detail/childComponents/DetailComment";
+import DetailRecommend from "@/views/detail/childComponents/DetailRecommend";
 
 export default {
   name: "Detail",
-  components: {DetailInfo, Scroll, ShopInfo, GoodsInfo, DetailNavBar},
+  components: {DetailRecommend, DetailComment, DetailInfo, Scroll, ShopInfo, GoodsInfo, DetailNavBar},
   data() {
     return {
       id: null,
@@ -36,7 +40,8 @@ export default {
       host: this.$store.state.host,
       goods: null,
       shopInfo: null,
-      detailInfo: null
+      detailInfo: null,
+      detailComment:{username:"游客",comment:"好评",goodsInfo:"黑色，xl码",time:"2021-12-21"}
     }
   },
   mounted() {
@@ -63,6 +68,7 @@ export default {
           })
           console.log(this.detailInfo)
         })
+
     )
   },
 

@@ -13,6 +13,7 @@
                class="title-item"
                :class="{active:index===currentIndex}"
                @click="changeIndex(index)"
+
           >
             {{ item }}
           </div>
@@ -37,6 +38,7 @@ export default {
   methods:{
     changeIndex(index){
       this.currentIndex = index
+      this.$emit("tabClick",index)
     },
     backToHome(){
       this.$router.back()
